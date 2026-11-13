@@ -578,6 +578,41 @@
           "returns": "update result"
         }
       ]
+    },
+    "wb": {
+      "description": "Wildberries seller API: feedbacks answers (stub: needs seller token feedbacks:write)",
+      "baseUrl": "https://feedbacks-api.wildberries.ru",
+      "configured": false,
+      "methods": [
+        {
+          "name": "answerFeedback",
+          "description": "Publish an answer to a customer review. Rate limit: max 3 req/s — batch 10 + 2s pause. Token: seller token with feedbacks:write scope, via {{ $env.WB_API_TOKEN }}.",
+          "tags": [
+            "wb",
+            "wildberries",
+            "feedback",
+            "answer",
+            "reply",
+            "publish"
+          ],
+          "danger": "write",
+          "params": [
+            {
+              "name": "id",
+              "type": "string",
+              "required": true,
+              "description": "Review id (from feedbacks1.wb.ru feedbacks[].id)"
+            },
+            {
+              "name": "text",
+              "type": "string",
+              "required": true,
+              "description": "Answer text (LLM draft approved by operator)"
+            }
+          ],
+          "returns": "HTTP 200 {ok} — check via GET /api/v1/feedback?id=..."
+        }
+      ]
     }
   }
 }
