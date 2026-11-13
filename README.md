@@ -2,7 +2,7 @@
 
 **Ядро безопасного LLM-агента для автоматизации: Code Mode MCP + конвейер с подтверждениями.**
 
-Один MCP-сервер, два инструмента, sandbox-исполнение, серверные проверки правды и секрет-индирекция. Боевые примеры: [agent-hub-code-mode](https://github.com/nekto9852-bit/agent-hub-code-mode) — 100 отзывов → LLM → CSV за 8.1с; **WB Review Responder** — human-in-the-loop: 50 черновиков ответов → явное «да» оператора → публикация (dry-run).
+Один MCP-сервер, два инструмента, sandbox-исполнение, серверные проверки правды и секрет-индирекция. Боевые примеры: [agent-hub-code-mode](https://github.com/nekto9852-bit/agent-hub-code-mode) — 100 отзывов → LLM → CSV за 8.1с; **WB Review Responder** — human-in-the-loop: 50 черновиков ответов → явное «да» оператора → audit-log (stateless dry-run confirm; ответы в WB не публикуются).
 
 ## Состав
 
