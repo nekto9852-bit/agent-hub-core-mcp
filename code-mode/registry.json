@@ -1,0 +1,583 @@
+{
+  "$comment": "Code Mode method registry. danger: read | write | delete. configured=false -> execute() refuses with clear error (no credentials connected).",
+  "servers": {
+    "n8n": {
+      "description": "n8n workflow automation (local instance)",
+      "baseUrl": "http://localhost:5678",
+      "auth": "X-N8N-API-KEY header from N8N_API_KEY",
+      "configured": true,
+      "methods": [
+        {
+          "name": "listWorkflows",
+          "description": "List workflows on the n8n instance (id, name, active, nodes count).",
+          "tags": [
+            "n8n",
+            "workflow",
+            "list",
+            "search"
+          ],
+          "danger": "read",
+          "params": [],
+          "returns": "array of {id, name, active, createdAt, updatedAt}"
+        },
+        {
+          "name": "getWorkflow",
+          "description": "Fetch a single workflow with full node graph and connections.",
+          "tags": [
+            "n8n",
+            "workflow",
+            "get",
+            "read",
+            "nodes"
+          ],
+          "danger": "read",
+          "params": [
+            {
+              "name": "id",
+              "type": "string",
+              "required": true,
+              "description": "Workflow id"
+            }
+          ],
+          "returns": "{id, name, active, nodes: [...], connections: {...}}"
+        },
+        {
+          "name": "createWorkflow",
+          "description": "Create a new workflow. Pass name, nodes (with id, name, type, typeVersion, position, parameters) and connections. Created INACTIVE by default.",
+          "tags": [
+            "n8n",
+            "workflow",
+            "create",
+            "new",
+            "build"
+          ],
+          "danger": "write",
+          "params": [
+            {
+              "name": "name",
+              "type": "string",
+              "required": true,
+              "description": "Workflow name"
+            },
+            {
+              "name": "nodes",
+              "type": "array",
+              "required": true,
+              "description": "Array of node objects: {id, name, type, typeVersion, position: [x,y], parameters: {}}"
+            },
+            {
+              "name": "connections",
+              "type": "object",
+              "required": true,
+              "description": "Map: {\"NodeName\": {\"main\": [[{\"node\": \"NextNode\", \"type\": \"main\", \"index\": 0}]]}}"
+            },
+            {
+              "name": "settings",
+              "type": "object",
+              "required": false,
+              "description": "Optional workflow settings"
+            }
+          ],
+          "returns": "{id, name, active: false, ...}"
+        },
+        {
+          "name": "updateWorkflow",
+          "description": "Update an existing workflow (name, nodes, connections, settings). Overwrites the given fields.",
+          "tags": [
+            "n8n",
+            "workflow",
+            "update",
+            "edit",
+            "modify"
+          ],
+          "danger": "write",
+          "params": [
+            {
+              "name": "id",
+              "type": "string",
+              "required": true,
+              "description": "Workflow id"
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "required": false,
+              "description": "New name"
+            },
+            {
+              "name": "nodes",
+              "type": "array",
+              "required": false,
+              "description": "Full replacement node array"
+            },
+            {
+              "name": "connections",
+              "type": "object",
+              "required": false,
+              "description": "Full replacement connections map"
+            }
+          ],
+          "returns": "{id, name, ...updated workflow}"
+        },
+        {
+          "name": "deleteWorkflow",
+          "description": "Delete a workflow permanently. Irreversible.",
+          "tags": [
+            "n8n",
+            "workflow",
+            "delete",
+            "remove"
+          ],
+          "danger": "delete",
+          "params": [
+            {
+              "name": "id",
+              "type": "string",
+              "required": true,
+              "description": "Workflow id to delete"
+            }
+          ],
+          "returns": "{success: true}"
+        },
+        {
+          "name": "activateWorkflow",
+          "description": "Activate a workflow (production trigger ON). Requires valid trigger node.",
+          "tags": [
+            "n8n",
+            "workflow",
+            "activate",
+            "enable",
+            "run"
+          ],
+          "danger": "write",
+          "params": [
+            {
+              "name": "id",
+              "type": "string",
+              "required": true,
+              "description": "Workflow id"
+            }
+          ],
+          "returns": "{id, active: true, ...}"
+        },
+        {
+          "name": "deactivateWorkflow",
+          "description": "Deactivate a workflow (production trigger OFF).",
+          "tags": [
+            "n8n",
+            "workflow",
+            "deactivate",
+            "disable",
+            "stop"
+          ],
+          "danger": "write",
+          "params": [
+            {
+              "name": "id",
+              "type": "string",
+              "required": true,
+              "description": "Workflow id"
+            }
+          ],
+          "returns": "{id, active: false, ...}"
+        },
+        {
+          "name": "setNodeCode",
+          "description": "Replace the jsCode of a Code node from a FILE (server reads the file itself — protects code from LLM re-typing corruption on update chains).",
+          "tags": [
+            "n8n",
+            "code",
+            "node",
+            "update",
+            "jsCode",
+            "file"
+          ],
+          "danger": "write",
+          "params": [
+            {
+              "name": "id",
+              "type": "string",
+              "required": true,
+              "description": "Workflow id"
+            },
+            {
+              "name": "nodeName",
+              "type": "string",
+              "required": true,
+              "description": "Exact name of the n8n-nodes-base.code node"
+            },
+            {
+              "name": "codeFile",
+              "type": "string",
+              "required": true,
+              "description": "Absolute path to the .js file on this machine"
+            }
+          ],
+          "returns": "{updated: true, node, codeLength}"
+        },
+        {
+          "name": "verifyNodeCode",
+          "description": "OBJECTIVE server-side check: compare the ACTUAL jsCode stored in a workflow node against a reference file (sha256). Call after every setNodeCode; match:false means the write did not land — never trust the agent's word.",
+          "tags": [
+            "n8n",
+            "code",
+            "node",
+            "verify",
+            "hash",
+            "audit"
+          ],
+          "danger": "read",
+          "params": [
+            {
+              "name": "id",
+              "type": "string",
+              "required": true,
+              "description": "Workflow id"
+            },
+            {
+              "name": "nodeName",
+              "type": "string",
+              "required": true,
+              "description": "Exact name of the code node"
+            },
+            {
+              "name": "codeFile",
+              "type": "string",
+              "required": true,
+              "description": "Reference .js file path"
+            }
+          ],
+          "returns": "{match: bool, actualSha256, expectedSha256, lengths}"
+        },
+        {
+          "name": "exportWorkflowSafe",
+          "description": "Export a workflow SANITIZED for publishing: strips owner personal data (shared/project) and redacts secret-looking values. Also reports rawSecretsFound — if any known secret is embedded verbatim, fix the workflow before publishing.",
+          "tags": [
+            "n8n",
+            "export",
+            "publish",
+            "sanitize",
+            "secrets",
+            "backup"
+          ],
+          "danger": "read",
+          "params": [
+            {
+              "name": "id",
+              "type": "string",
+              "required": true,
+              "description": "Workflow id"
+            }
+          ],
+          "returns": "{workflow: sanitizedObject, redactions: [...], rawSecretsFound: [...], safeToPublish: bool}"
+        },
+        {
+          "name": "listExecutions",
+          "description": "List recent workflow executions (status, workflowId, startedAt).",
+          "tags": [
+            "n8n",
+            "execution",
+            "list",
+            "history",
+            "log"
+          ],
+          "danger": "read",
+          "params": [
+            {
+              "name": "limit",
+              "type": "number",
+              "required": false,
+              "description": "Max executions to return (default 20)"
+            }
+          ],
+          "returns": "array of execution summaries"
+        },
+        {
+          "name": "getExecution",
+          "description": "Fetch one execution detail: status, data of each node, error.",
+          "tags": [
+            "n8n",
+            "execution",
+            "get",
+            "detail",
+            "error"
+          ],
+          "danger": "read",
+          "params": [
+            {
+              "name": "id",
+              "type": "string",
+              "required": true,
+              "description": "Execution id"
+            }
+          ],
+          "returns": "{id, status, data: {...}}"
+        }
+      ]
+    },
+    "github": {
+      "description": "GitHub issues (REST v3, fine-grained PAT)",
+      "baseUrl": "https://api.github.com",
+      "configured": false,
+      "methods": [
+        {
+          "name": "listIssues",
+          "description": "List issues of a repository.",
+          "tags": [
+            "github",
+            "issue",
+            "list"
+          ],
+          "danger": "read",
+          "params": [
+            {
+              "name": "repo",
+              "type": "string",
+              "required": true,
+              "description": "owner/name"
+            },
+            {
+              "name": "state",
+              "type": "string",
+              "required": false,
+              "description": "open|closed|all"
+            }
+          ],
+          "returns": "array of issues"
+        },
+        {
+          "name": "getIssue",
+          "description": "Fetch one issue with body and labels.",
+          "tags": [
+            "github",
+            "issue",
+            "get"
+          ],
+          "danger": "read",
+          "params": [
+            {
+              "name": "repo",
+              "type": "string",
+              "required": true,
+              "description": "owner/name"
+            },
+            {
+              "name": "number",
+              "type": "number",
+              "required": true,
+              "description": "issue number"
+            }
+          ],
+          "returns": "issue object"
+        },
+        {
+          "name": "createIssue",
+          "description": "Create a new issue.",
+          "tags": [
+            "github",
+            "issue",
+            "create"
+          ],
+          "danger": "write",
+          "params": [
+            {
+              "name": "repo",
+              "type": "string",
+              "required": true,
+              "description": "owner/name"
+            },
+            {
+              "name": "title",
+              "type": "string",
+              "required": true,
+              "description": "issue title"
+            },
+            {
+              "name": "body",
+              "type": "string",
+              "required": false,
+              "description": "markdown body"
+            }
+          ],
+          "returns": "created issue"
+        }
+      ]
+    },
+    "notion": {
+      "description": "Notion pages (stub: credentials not connected)",
+      "baseUrl": "https://api.notion.com/v1",
+      "configured": false,
+      "methods": [
+        {
+          "name": "getPage",
+          "description": "Fetch a Notion page by id.",
+          "tags": [
+            "notion",
+            "page",
+            "get",
+            "read"
+          ],
+          "danger": "read",
+          "params": [
+            {
+              "name": "pageId",
+              "type": "string",
+              "required": true,
+              "description": "Notion page id"
+            }
+          ],
+          "returns": "page object"
+        },
+        {
+          "name": "createPage",
+          "description": "Create a page in a database.",
+          "tags": [
+            "notion",
+            "page",
+            "create"
+          ],
+          "danger": "write",
+          "params": [
+            {
+              "name": "databaseId",
+              "type": "string",
+              "required": true,
+              "description": "target database id"
+            },
+            {
+              "name": "title",
+              "type": "string",
+              "required": true,
+              "description": "page title"
+            }
+          ],
+          "returns": "created page"
+        },
+        {
+          "name": "updatePage",
+          "description": "Update page properties or append content.",
+          "tags": [
+            "notion",
+            "page",
+            "update",
+            "edit"
+          ],
+          "danger": "write",
+          "params": [
+            {
+              "name": "pageId",
+              "type": "string",
+              "required": true,
+              "description": "page id"
+            },
+            {
+              "name": "properties",
+              "type": "object",
+              "required": false,
+              "description": "properties to update"
+            }
+          ],
+          "returns": "updated page"
+        }
+      ]
+    },
+    "gsheets": {
+      "description": "Google Sheets reports (stub: credentials not connected)",
+      "baseUrl": "https://sheets.googleapis.com/v4",
+      "configured": false,
+      "methods": [
+        {
+          "name": "readRange",
+          "description": "Read a range of a spreadsheet.",
+          "tags": [
+            "sheets",
+            "google",
+            "read",
+            "range"
+          ],
+          "danger": "read",
+          "params": [
+            {
+              "name": "spreadsheetId",
+              "type": "string",
+              "required": true,
+              "description": "spreadsheet id"
+            },
+            {
+              "name": "range",
+              "type": "string",
+              "required": true,
+              "description": "A1 or R1C1 range"
+            }
+          ],
+          "returns": "{values: [[...]]}"
+        },
+        {
+          "name": "appendRows",
+          "description": "Append rows to a sheet.",
+          "tags": [
+            "sheets",
+            "google",
+            "append",
+            "write",
+            "report"
+          ],
+          "danger": "write",
+          "params": [
+            {
+              "name": "spreadsheetId",
+              "type": "string",
+              "required": true,
+              "description": "spreadsheet id"
+            },
+            {
+              "name": "range",
+              "type": "string",
+              "required": true,
+              "description": "target range"
+            },
+            {
+              "name": "rows",
+              "type": "array",
+              "required": true,
+              "description": "array of row arrays"
+            }
+          ],
+          "returns": "append result"
+        },
+        {
+          "name": "updateRange",
+          "description": "Overwrite a range with values.",
+          "tags": [
+            "sheets",
+            "google",
+            "update",
+            "write"
+          ],
+          "danger": "write",
+          "params": [
+            {
+              "name": "spreadsheetId",
+              "type": "string",
+              "required": true,
+              "description": "spreadsheet id"
+            },
+            {
+              "name": "range",
+              "type": "string",
+              "required": true,
+              "description": "target range"
+            },
+            {
+              "name": "values",
+              "type": "array",
+              "required": true,
+              "description": "array of row arrays"
+            }
+          ],
+          "returns": "update result"
+        }
+      ]
+    }
+  }
+}
