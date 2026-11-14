@@ -585,6 +585,45 @@
       "configured": false,
       "methods": [
         {
+          "name": "listFeedbacks",
+          "description": "Read seller feedbacks list (questions/reviews awaiting answers and answered). Read-only: no publish, no mutations. Token: seller token with feedbacks scope, via {{ $env.WB_API_TOKEN }}. Rate limit: max 3 req/s.",
+          "tags": [
+            "wb",
+            "wildberries",
+            "feedback",
+            "list",
+            "read"
+          ],
+          "danger": "read",
+          "params": [
+            {
+              "name": "isAnswered",
+              "type": "boolean",
+              "required": false,
+              "description": "true = answered, false = awaiting answer (default: all)"
+            },
+            {
+              "name": "take",
+              "type": "number",
+              "required": false,
+              "description": "Max items per page (WB default/limit applies)"
+            },
+            {
+              "name": "skip",
+              "type": "number",
+              "required": false,
+              "description": "Offset for pagination"
+            },
+            {
+              "name": "dateFrom",
+              "type": "string",
+              "required": false,
+              "description": "ISO date filter"
+            }
+          ],
+          "returns": "array of {id, text, productValuation, createdDate, answer: {text}|null, ...}"
+        },
+        {
           "name": "answerFeedback",
           "description": "Publish an answer to a customer review. Rate limit: max 3 req/s — batch 10 + 2s pause. Token: seller token with feedbacks:write scope, via {{ $env.WB_API_TOKEN }}.",
           "tags": [
